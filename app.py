@@ -1,54 +1,54 @@
 import streamlit as st
 import json
 import os
+import requests
 from datetime import datetime
 
-# Настройки файла базы данных
+# --- НАСТРОЙКИ TELEGRAM ---
+BOT_TOKEN = "8526733369:AAFyb9kE68lFOuCpUINp7fKS0aEapyfkdpA"  # Вставь сюда токен от BotFather
+USER_IDS = ["1376787931", "5185753365"] # Вставь ID (свой и друга) через запятую
+
+def send_tg_message(text):
+    for user_id in USER_IDS:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        params = {"chat_id": user_id, "text": text}
+        try:
+            requests.get(url, params=params)
+        except:
+            pass
+
+# --- ГЛАВНАЯ ЛОГИКА ---
 DB_FILE = "status.json"
 
 def load_status():
     if os.path.exists(DB_FILE):
         with open(DB_FILE, "r") as f:
             return json.load(f)
-    return {"user": None, "active": False, "last_change": ""}
+    return {"user": None, "active": False}
 
 def save_status(user, active):
-    status = {
-        "user": user,
-        "active": active,
-        "last_change": datetime.now().strftime("%H:%M:%S")
-    }
+    status = {"user": user, "active": active, "time": datetime.now().strftime("%H:%M")}
     with open(DB_FILE, "w") as f:
         json.dump(status, f)
     return status
 
-st.set_page_config(page_title="Juz40 Access Control", page_icon="📚")
-
-st.title("📚 Кто сейчас на аккаунте?")
+st.title("📚 Juz40 Контроль")
 
 status = load_status()
 
-# Отображение текущего статуса
 if status["active"]:
     st.error(f"🔴 СЕЙЧАС СИДИТ: {status['user']}")
-    st.caption(f"Зашел в: {status['last_change']}")
 else:
-    st.success("🟢 СВОБОДНО. Можно заходить!")
+    st.success("🟢 СВОБОДНО. Заходи!")
 
 st.divider()
 
-# Кнопки управления
-col1, col2 = st.columns(2)
+if st.button("🚀 Я ЗАШЕЛ"):
+    save_status("Кто-то из вас", True)
+    st.rerun()
 
-with col1:
-    if st.button("🚀 Я ЗАШЕЛ (Бронирую)"):
-        # Тут впиши ваше имя для удобства
-        save_status("Друг", True) 
-        st.rerun()
-
-with col2:
-    if st.button("✅ Я ВЫШЕЛ (Освободил)"):
-        save_status(None, False)
-        st.rerun()
-
-st.info("Пожалуйста, не забывайте нажимать 'Вышел', когда закончили!")
+if st.button("✅ Я ВЫШЕЛ"):
+    save_status(None, False)
+    # Когда нажимаете "Вышел", бот пишет в Телеграм
+    send_tg_message("✅ Аккаунт Juz40 освободился! Можно заходить.")
+    st.rerun()
