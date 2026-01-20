@@ -4,9 +4,9 @@ import os
 import requests
 from datetime import datetime
 
-# --- НАСТРОЙКИ TELEGRAM ---
-BOT_TOKEN = "8526733369:AAFyb9kE68lFOuCpUINp7fKS0aEapyfkdpA"  # Вставь сюда токен от BotFather
-USER_IDS = ["1376787931", "5185753365"] # Вставь ID (свой и друга) через запятую
+# --- НАСТРОЙКИ TELEGRAM (ВСТАВЬ СВОИ ДАННЫЕ) ---
+BOT_TOKEN = "8526733369:AAFyb9kE68lFOuCpUINp7fKS0aEapyfkdpA" 
+USER_IDS = ["1376787931", "5185753365"] 
 
 def send_tg_message(text):
     for user_id in USER_IDS:
@@ -24,31 +24,39 @@ def load_status():
     if os.path.exists(DB_FILE):
         with open(DB_FILE, "r") as f:
             return json.load(f)
-    return {"user": None, "active": False}
+    return {"user": None, "active": False, "time": ""}
 
 def save_status(user, active):
-    status = {"user": user, "active": active, "time": datetime.now().strftime("%H:%M")}
+    now = datetime.now().strftime("%H:%M")
+    status = {"user": user, "active": active, "time": now}
     with open(DB_FILE, "w") as f:
         json.dump(status, f)
     return status
 
+st.set_page_config(page_title="Juz40 Access", page_icon="📚")
 st.title("📚 Juz40 Контроль")
 
 status = load_status()
 
 if status["active"]:
     st.error(f"🔴 СЕЙЧАС СИДИТ: {status['user']}")
+    st.caption(f"Зашел в {status['time']}")
 else:
-    st.success("🟢 СВОБОДНО. Заходи!")
+    st.success("🟢 СВОБОДНО. Можно заходить!")
 
 st.divider()
 
-if st.button("🚀 Я ЗАШЕЛ"):
-    save_status("Кто-то из вас", True)
-    st.rerun()
+# КНОПКА ЗАХОДА
+if st.button("🚀 Я ЗАШЕЛ (Занять аккаунт)"):
+    if not status["active"]:
+        save_status("Друг", True)
+        send_tg_message("🚀 Кто-то зашел в аккаунт Juz40! Теперь занято.")
+        st.rerun()
+    else:
+        st.warning("Аккаунт уже занят!")
 
-if st.button("✅ Я ВЫШЕЛ"):
+# КНОПКА ВЫХОДА
+if st.button("✅ Я ВЫШЕЛ (Освободить)"):
     save_status(None, False)
-    # Когда нажимаете "Вышел", бот пишет в Телеграм
-    send_tg_message("✅ Аккаунт Juz40 освободился! Можно заходить.")
+    send_tg_message("✅ Аккаунт Juz40 СВОБОДЕН! Можно заходить.")
     st.rerun()
