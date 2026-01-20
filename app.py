@@ -4,16 +4,14 @@ import os
 import requests
 from datetime import datetime, timedelta
 import random
-import time
 
 # --- НАСТРОЙКИ ---
 BOT_TOKEN = "8526733369:AAFyb9kE68lFOuCpUINp7fKS0aEapyfkdpA"
-USER_IDS = ["1376787931", "5185753365"]
+# Вставил сюда твой ID и ID Даурена со скриншота
+USER_IDS = ["1376787931", "5185753365"] 
 COURSE_URL = "https://juz40.kz"
-# Дата ҰБТ: 28 января 2026, 14:30
 TARGET_DATE = datetime(2026, 1, 28, 14, 30)
 
-# Функция для получения времени Караганды (UTC+5)
 def get_krg_time():
     return datetime.utcnow() + timedelta(hours=5)
 
@@ -27,18 +25,19 @@ def send_tg_message(text):
 # --- ЛОГИКА ДАННЫХ ---
 DB_FILE = "status.json"
 MOTIVATORS = [
-    "🇰🇿 1219 г. — Начало нашествия Чингисхана на Казахстан.",
+    "🇰🇿 1465 г. — Образование Казахского ханства.",
     "📐 Sin²α + Cos²α = 1",
     "📚 1841 г. — Кенесары официально избран ханом.",
-    "📈 Формула Пика: S = В + Г/2 - 1",
-    "🚀 Бро, ты будущий грантник, не сдавайся!",
-    "🏛 1465 г. — Образование Казахского ханства."
+    "🚀 Бро, ты будущий грантник, не сдавайся!"
 ]
 
 def load_data():
     if os.path.exists(DB_FILE):
-        with open(DB_FILE, "r") as f: return json.load(f)
-    return {"user": None, "active": False, "start_time": None, "total_time": {"Имаш": 0, "Даурен": 0}}
+        with open(DB_FILE, "r") as f: 
+            data = json.load(f)
+            if "total_time" not in data: data["total_time"] = {"Имаш": 0, "Даурен": 0}
+            return data
+    return {"user": None, "active": False, "start_time": None, "start_dt_iso": None, "total_time": {"Имаш": 0, "Даурен": 0}}
 
 def save_data(data):
     with open(DB_FILE, "w", encoding='utf-8') as f:
@@ -49,25 +48,19 @@ st.set_page_config(page_title="Juz40 Karaganda", page_icon="👑")
 data = load_data()
 now_krg = get_krg_time()
 
-# 1. ТАЙМЕР ҰБТ (КАРАГАНДА)
-st.markdown("<h3 style='text-align: center;'>🇰🇿 До Қаңтар ҰБТ осталось:</h3>", unsafe_allow_html=True)
-timer_place = st.empty()
-
-# Расчет времени до экзамена
+# 1. ТАЙМЕР ҰБТ
+st.markdown("<h3 style='text-align: center;'>⏳ До Қаңтар ҰБТ осталось:</h3>", unsafe_allow_html=True)
 diff = TARGET_DATE - now_krg
 if diff.total_seconds() > 0:
     days = diff.days
     hours, rem = divmod(diff.seconds, 3600)
-    mins, secs = divmod(rem, 60)
-    timer_place.markdown(f"<h2 style='text-align: center; color: #FF4B4B;'>{days}д. {hours}ч. {mins}м. {secs}с.</h2>", unsafe_allow_html=True)
-else:
-    timer_place.error("🏁 Экзамен начался!")
+    mins, _ = divmod(rem, 60)
+    st.markdown(f"<h2 style='text-align: center; color: #FF4B4B;'>{days}д. {hours}ч. {mins}м.</h2>", unsafe_allow_html=True)
 
 st.divider()
 
-# 2. МУЗЫКА ДЛЯ ФОКУСА
-with st.expander("🎧 ВКЛЮЧИТЬ МУЗЫКУ ДЛЯ УЧЕБЫ"):
-    st.write("Lofi-биты для концентрации:")
+# 2. МУЗЫКА
+with st.expander("🎧 МУЗЫКА ДЛЯ УЧЕБЫ"):
     st.video("https://www.youtube.com/watch?v=jfKfPfyJRdk")
 
 st.divider()
@@ -89,9 +82,9 @@ st.divider()
 # 4. СТАТУС
 if data["active"]:
     st.error(f"🔴 СЕЙЧАС ВНУТРИ: {data['user']}")
-    st.info(f"🕒 Зашел в {data['start_time']} (Время Караганды)")
+    st.info(f"🕒 Зашел в {data['start_time']} (Караганда)")
 else:
-    st.success("🟢 СВОБОДНО. Заходи!")
+    st.success("🟢 СВОБОДНО")
 
 st.link_button("🔗 ОТКРЫТЬ JUZ40.KZ", COURSE_URL, use_container_width=True)
 
@@ -101,8 +94,8 @@ with col_btn1:
     if st.button("🙋‍♂️ Я Имаш", use_container_width=True):
         if not data["active"]:
             data["active"], data["user"] = True, "Имаш"
-            data["start_time"] = get_krg_time().strftime("%H:%M")
-            data["start_dt_iso"] = get_krg_time().isoformat()
+            data["start_time"] = now_krg.strftime("%H:%M")
+            data["start_dt_iso"] = now_krg.isoformat()
             save_data(data)
             st.toast(random.choice(MOTIVATORS))
             send_tg_message(f"🚀 Имаш зашел в {data['start_time']}!")
@@ -112,11 +105,21 @@ with col_btn2:
     if st.button("🙋‍♂️ Я Даурен", use_container_width=True):
         if not data["active"]:
             data["active"], data["user"] = True, "Даурен"
-            data["start_time"] = get_krg_time().strftime("%H:%M")
-            data["start_dt_iso"] = get_krg_time().isoformat()
+            data["start_time"] = now_krg.strftime("%H:%M")
+            data["start_dt_iso"] = now_krg.isoformat()
             save_data(data)
             st.toast(random.choice(MOTIVATORS))
             send_tg_message(f"🚀 Даурен зашел в {data['start_time']}!")
             st.rerun()
 
-if
+if st.button("✅ Я ВЫШЕЛ", use_container_width=True):
+    if data["active"]:
+        start_dt = datetime.fromisoformat(data["start_dt_iso"])
+        duration = get_krg_time() - start_dt
+        m_spent = int(duration.total_seconds() // 60)
+        u = data["user"]
+        data["total_time"][u] += m_spent
+        data["active"], data["user"] = False, None
+        save_data(data)
+        send_tg_message(f"✅ {u} вышел. Учился {m_spent} мин.")
+        st.rerun()
